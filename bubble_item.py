@@ -18,14 +18,17 @@ from PyQt5.QtWidgets import (
 
 
 class BubbleItem(QWidget):
+    
     def __init__(self, text="", pic_path=None, is_me=True):
         super().__init__()
         self.is_me = is_me
+        self.text = ""
         # 水平布局：自己靠右，对方靠左
         layout = QHBoxLayout(self)
         layout.setContentsMargins(20, 10, 20, 10)
 
         lbl = QLabel()
+        self.lbl = lbl
         lbl.setWordWrap(True)
         lbl.setMaximumWidth(420)
         lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -56,3 +59,12 @@ class BubbleItem(QWidget):
                 font:14px "Microsoft YaHei";
             }}
         """
+    
+    def append_text(self, token: str):
+        self.text += token
+        self.lbl.setText(self.text)
+
+
+    def finish(self):
+        # 可选：改变背景，表示流式结束
+        self.lbl.setStyleSheet(self._style() + "border:2px solid #2196F3;")

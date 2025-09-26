@@ -34,7 +34,7 @@ class RobotStaticTray(QSystemTrayIcon):
         p.setBrush(QBrush(QColor("#2196F3")))
         p.setPen(Qt.NoPen)
         p.drawEllipse(0, 0, 16, 16)
-        p.setBrush(QBrush(QColor("#000")))
+        p.setBrush(QBrush(QColor("#FFFFFF")))
         p.drawEllipse(QPoint(5, 5), 2, 2)
         p.drawEllipse(QPoint(11, 5), 2, 2)
         p.end()

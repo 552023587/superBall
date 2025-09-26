@@ -19,9 +19,9 @@ class ChatWindow(QWidget):
         self.setStyleSheet(self.qss())
         self.init_ui()
         self.llm = StreamLLM(
-            provider="kimi",
-            api_key=os.getenv("KIMI_API_KEY"),
-            model="moonshot-v1-8k"
+            provider="qwen",
+            api_key="",
+            model="qwen3-max"
         )
         self.messages = []
 
