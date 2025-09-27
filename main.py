@@ -22,7 +22,7 @@ CONFIG = {}
 if os.path.exists(CONFIG_PATH):
     with open(CONFIG_PATH, 'r') as f:
         CONFIG = json.load(f)
-print(CONFIG)                   
+                 
 # ========== 1. 异步数据 Worker ==========
 class DataWorker(QObject):
     """在子线程里轮询接口，拿到数据后发射 signal"""
@@ -46,6 +46,7 @@ class DataWorker(QObject):
                 self.dataReady.emit(new_data)
         except Exception as e:
             print("接口异常:", e)
+            logging.error(f"Application error: {str(e)}", exc_info=True)
             self.dataReady.emit(["--"])
 
 

@@ -2,5 +2,7 @@
     "stock":["002402"],
     "etf":["515990"],
     "stock_thresholds":[40],
-    "etf_thresholds":[1.5]
+    "etf_thresholds":[1.5],
+    "llm_token":"sk-49948d44954e43a8baa3c9f3214aebc2",
+    "llm_model":"qwen3-max"
 }

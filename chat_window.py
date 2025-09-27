@@ -7,7 +7,15 @@ from PyQt5.QtWidgets import (
 )
 from bubble_item import BubbleItem   # 沿用前面的气泡
 from llm_stream import StreamLLM     # 上一篇的流式 LLM 封装
-import os
+import os,sys,json
+
+BASE_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
+
+CONFIG_PATH = BASE_DIR+'\\config.json'
+CONFIG = {}
+if os.path.exists(CONFIG_PATH):
+    with open(CONFIG_PATH, 'r') as f:
+        CONFIG = json.load(f)
 
 class ChatWindow(QWidget):
     closed = pyqtSignal()   # 通知主窗口已关闭
@@ -20,8 +28,8 @@ class ChatWindow(QWidget):
         self.init_ui()
         self.llm = StreamLLM(
             provider="qwen",
-            api_key="sk-0b60c076e5b047e0aa5a403e386b9037",
-            model="qwen3-max"
+            api_key=CONFIG['llm_token'],
+            model=CONFIG['llm_model']
         )
         self.messages = []
 
