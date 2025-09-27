@@ -1,0 +1,6 @@
+{
+    "stock":["002402"],
+    "etf":["515990"],
+    "stock_thresholds":[40],
+    "etf_thresholds":[1.5]
+}

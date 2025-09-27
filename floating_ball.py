@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import sys, os, tempfile, subprocess, threading, queue, enum
+import sys, os, tempfile, subprocess, threading, queue, enum,random
 from pathlib import Path
 import psutil
 from PyQt5.QtCore import (
@@ -13,29 +13,40 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QMenu, QAction, QSystemTrayIcon, QShortcut, QMessageBox,
     QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, QListWidget,
-    QListWidgetItem, QLabel, QScrollArea, QFrame, QFileDialog
+    QListWidgetItem, QLabel, QScrollArea, QFrame, QFileDialog,QToolTip
 )
 from tool_enum import Tool
-# -------------- 悬浮球 --------------
+
 class FloatingBanner(QWidget):
     def __init__(self, parent=None):
+        """
+        浮动横幅类的初始化方法
+        :param parent: 父窗口对象
+        """
         super().__init__(parent)
-        self._parent = parent
-        self._drag_pos = QPoint()
+        self._parent = parent  # 保存父窗口引用
+        self._drag_pos = QPoint()  # 拖动位置初始化
         self.db_tool = Tool.MAINWND  # 默认双击打开主窗口
 
-        # 外观
-        self.bg_color = QColor("#ffffff")
-        self.border_color = QColor("#2196F3")
-        self.text_color = self.border_color
-        self.font_size = 14
-        self.texts = ["..."]
+        # 外观设置
+        self.bg_color = QColor("#ffffff")  # 背景色
+        self.border_color = QColor("#2196F3")  # 边框颜色
+        self.text_color = self.border_color  # 文字颜色
+        self.font_size = 14  # 字体大小
+        self.texts = ["..."]  # 显示文本列表
+        self.tooltips = ["默认提示"]  # 提示文本列表
+        self.thresholds = None  # 阈值列表
+        self.values = None  # 数值列表
+        
+        # 设置窗口标志：无边框、置顶、工具窗口
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        # 设置窗口属性：透明背景、非系统背景、不绘制在屏幕上、不透明鼠标事件
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_NoSystemBackground, False)
         self.setAttribute(Qt.WA_PaintOnScreen, False)
         self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
-        self.resize(60, 60)
+        self.resize(90, 90)  # 设置初始窗口大小
+
     def _round_mask(self):
         """返回一个圆形 QRegion，用来裁掉四角"""
         diameter = min(self.width(), self.height())
@@ -46,9 +57,29 @@ class FloatingBanner(QWidget):
         """窗口大小一变，掩码跟着变"""
         super().resizeEvent(ev)
         self.setMask(self._round_mask())
+
     # ------ 接收数据 ------
-    def onData(self, texts):
-        self.texts = texts
+    def onData(self, texts, tooltips=None, values=None, thresholds=None):
+        """
+        更新显示文本和提示文本
+        :param texts: 显示文本列表
+        :param tooltips: 提示文本列表，可选
+        :param values: 数值列表，可选
+        :param thresholds: 阈值列表，可选
+        """
+        # 确保texts是字符串列表
+        self.texts = [str(text) if not isinstance(text, str) else text for text in texts]
+        
+        # 如果提供了tooltips，确保它们也是字符串列表
+        if tooltips:
+            self.tooltips = [str(tip) if not isinstance(tip, str) else tip for tip in tooltips]
+            
+        # 如果提供了values和thresholds，保存它们
+        if values is not None:
+            self.values = values
+        if thresholds is not None:
+            self.thresholds = thresholds
+            
         self.update()
 
     # ------ 绘制 ------
@@ -78,11 +109,45 @@ class FloatingBanner(QWidget):
         p.drawPath(path)
 
         # 3. 文字
-        p.setPen(QColor("#2196F3"))
+        # 随机选择一个文本和对应的值（如果有）
+        index = random.randint(0, len(self.texts) - 1)
+        text = self.texts[index]
+        
+        # 确定文字颜色
+        text_color = QColor("#2196F3")  # 默认蓝色
+        if self.values is not None and self.thresholds is not None and index < len(self.values):
+            try:
+                value = float(self.values[index])
+                threshold = float(self.thresholds[index])
+                # 根据值与阈值的关系设置颜色
+                if value > threshold:
+                    text_color = QColor("#7b00ff")  # 红色
+                else:
+                    text_color = QColor("#009a7e")  # 绿色
+            except (ValueError, TypeError):
+                # 如果转换失败，使用默认颜色
+                pass
+        
+        p.setPen(text_color)
         p.setFont(QFont("Microsoft YaHei", self.font_size, QFont.Bold))
-        p.drawText(rect, Qt.AlignCenter, self.texts[0])
+        p.drawText(rect, Qt.AlignCenter, text)
 
-    # ------ 鼠标 ------
+    # ------ 鼠标事件 ------
+    def enterEvent(self, event):
+        """鼠标进入窗口时显示提示"""
+        if self.tooltips:
+            # 确保选择的提示是字符串
+            tooltip = random.choice(self.tooltips)
+            if not isinstance(tooltip, str):
+                tooltip = str(tooltip)
+            QToolTip.showText(event.globalPos(), tooltip)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        """鼠标离开窗口时隐藏提示"""
+        QToolTip.hideText()
+        super().leaveEvent(event)
+
     def mousePressEvent(self, ev):
         if ev.button() == Qt.LeftButton:
             self._drag_pos = ev.globalPos() - self.frameGeometry().topLeft()
@@ -126,4 +191,5 @@ class FloatingBanner(QWidget):
         self._anim.setEndValue(tgt)
         self._anim.setEasingCurve(QEasingCurve.OutCubic)
         self._anim.start()
+
 

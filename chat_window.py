@@ -3,7 +3,7 @@ from PyQt5.QtCore import Qt, QTimer, QThreadPool, pyqtSignal   # ←加这一行
 from PyQt5.QtGui import QPixmap, QFont, QTextDocument
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QTextEdit, QListWidget, QListWidgetItem,
-    QLabel, QPushButton, QHBoxLayout, QShortcut, QFileDialog
+    QLabel, QPushButton, QHBoxLayout, QShortcut, QFileDialog,QApplication
 )
 from bubble_item import BubbleItem   # 沿用前面的气泡
 from llm_stream import StreamLLM     # 上一篇的流式 LLM 封装
@@ -15,12 +15,12 @@ class ChatWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("AI 聊天")
-        self.resize(480, 720)
+        self.resize(720, 1080)
         self.setStyleSheet(self.qss())
         self.init_ui()
         self.llm = StreamLLM(
             provider="qwen",
-            api_key="",
+            api_key="sk-0b60c076e5b047e0aa5a403e386b9037",
             model="qwen3-max"
         )
         self.messages = []
@@ -80,6 +80,9 @@ class ChatWindow(QWidget):
         item.setSizeHint(bubble.sizeHint())
         self.list_w.addItem(item)
         self.list_w.setItemWidget(item, bubble)
+        bubble._list_item = item          # 给气泡 item 引用
+        bubble._list_widget = self.list_w  # ← 给气泡列表引用
+        self.list_w.scrollToBottom()
 
     def pick_pic(self):
         path, _ = QFileDialog.getOpenFileName(self, "选图", "", "Images (*.png *.jpg *.bmp)")
@@ -110,9 +113,69 @@ class ChatWindow(QWidget):
     # -------------- 皮肤 --------------
     def qss(self):
         return """
-        QWidget{background:#1e1e2e;color:#E0E0E0;font:14px "Microsoft YaHei";}
-        QTextEdit{background:#2C2C3E;border:1px solid #3A3A4D;border-radius:8px;padding:6px;}
-        QPushButton{background:#2196F3;color:white;border-radius:6px;padding:6px 12px;}
-        QPushButton:hover{background:#42A5F5;}
-        QListWidget{background:transparent;border:none;}
+        /* ========== 全局 ========== */
+        QWidget{
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                        stop:0 #1e1e2e, stop:1 #252536);
+            color: #E0E0E0;
+            font-size: 21px;
+            font-family: "Microsoft YaHei", "PingFang SC";
+        }
+
+        /* ========== 聊天列表 ========== */
+        QListWidget{
+            background: transparent;
+            border: none;
+            outline: 0;
+        }
+        QListWidget::item{
+            border-radius: 12px;
+            padding: 4px;
+        }
+        QListWidget::item:selected{
+            background: rgba(255, 255, 255, 30);
+        }
+
+        /* ========== 输入框 ========== */
+        QTextEdit{
+            background: #2C2C3E;
+            color: #E0E0E0;
+            border: 1px solid #3A3A4D;
+            border-radius: 12px;
+            padding: 10px;
+            selection-background-color: #2196F3;
+        }
+
+        /* ========== 按钮 ========== */
+        QPushButton{
+            background: #2196F3;
+            color: white;
+            border-radius: 10px;
+            padding: 10px 22px;
+            font-size: 21px;
+            font-weight: 500;
+        }
+        QPushButton:hover{
+            background: #42A5F5;
+        }
+        QPushButton:pressed{
+            background: #1E88E5;
+        }
+
+        /* ========== 滚动条 ========== */
+        QScrollBar:vertical{
+            background: transparent;
+            width: 10px;
+            border-radius: 5px;
+        }
+        QScrollBar::handle:vertical{
+            background: #5A5A72;
+            min-height: 20px;
+            border-radius: 5px;
+        }
+        QScrollBar::add-line:vertical,
+        QScrollBar::sub-line:vertical{
+            border: none;
+            background: none;
+        }
         """
